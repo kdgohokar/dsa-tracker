@@ -1430,6 +1430,11 @@
         orderBy,
         serverTimestamp,
       } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      import {
+        getAnalytics,
+        logEvent,
+        isSupported as analyticsSupported,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
       // ─────────────────────────────────────────────────────────────────────
       // STEP 1: Replace this config with your own Firebase project config.
@@ -1456,16 +1461,37 @@
       });
       const provider = new GoogleAuthProvider();
 
+      // ── Analytics ─────────────────────────────────────────────────────────
+      // GA4 auto-collects page_view / session events. We add a guarded helper
+      // for the app's own events. isSupported() avoids errors in environments
+      // where Analytics can't run (private mode, blocked storage); track() then
+      // safely no-ops and never throws into app logic.
+      let analytics = null;
+      analyticsSupported()
+        .then((ok) => {
+          if (ok) analytics = getAnalytics(app);
+        })
+        .catch(() => {});
+      function track(name, params) {
+        try {
+          if (analytics) logEvent(analytics, name, params);
+        } catch (e) {
+          /* analytics must never break the app */
+        }
+      }
+
       // ── Expose auth functions to global scope for onclick handlers ────────
       window.signInWithGoogle = async () => {
         try {
           await signInWithPopup(auth, provider);
+          track("login", { method: "google" });
         } catch (e) {
           showToast("Sign-in failed: " + e.message);
         }
       };
 
       window.signOut = async () => {
+        track("logout");
         if (unsubscribe) unsubscribe();
         await fbSignOut(auth);
       };
@@ -1573,8 +1599,9 @@
         document.getElementById("sync-dot").className = "sync-dot offline";
         document.getElementById("sync-label").textContent = "Offline";
       }
-      navigator.addEventListener?.("offline", setOffline);
-      navigator.addEventListener?.("online", () => setSyncing(false));
+      window.addEventListener("offline", setOffline);
+      window.addEventListener("online", () => setSyncing(false));
+      if (!navigator.onLine) setOffline();
 
       // ── Retention model ───────────────────────────────────────────────────
       function calcRetention(e) {
@@ -1699,6 +1726,7 @@
           showToast(
             `"${name}" logged — R1 due ${until(doc_data.nextReview).toLowerCase()}`,
           );
+          track("log_problem", { difficulty: diff, source });
           // Reset form
           document.getElementById("f-name").value = "";
           document.getElementById("f-pattern").value = "";
@@ -1715,6 +1743,29 @@
 
       // ── Heatmap ───────────────────────────────────────────────────────────
       const tooltip = document.getElementById("tooltip");
+
+      function fillTooltip(e, r) {
+        document.getElementById("tt-name").textContent = e.name;
+        document.getElementById("tt-pat").textContent =
+          e.pattern || "No pattern tagged";
+        document.getElementById("tt-ret").textContent =
+          `Retention: ${Math.round(r * 100)}% · ${revLabel(e.reviews)}`;
+        document.getElementById("tt-nxt").textContent =
+          `Next review: ${until(e.nextReview)}`;
+        tooltip.classList.add("show");
+      }
+      // Position the (fixed) tooltip near a point, clamped to the viewport
+      function placeTooltip(x, y) {
+        const tw = tooltip.offsetWidth || 200;
+        const th = tooltip.offsetHeight || 90;
+        const left = Math.max(8, Math.min(x + 14, window.innerWidth - tw - 8));
+        const top = Math.max(8, Math.min(y - 10, window.innerHeight - th - 8));
+        tooltip.style.left = left + "px";
+        tooltip.style.top = top + "px";
+      }
+      const hideTooltip = () => tooltip.classList.remove("show");
+      // Tap anywhere else dismisses the tooltip (mobile has no hover/leave)
+      document.addEventListener("click", hideTooltip);
 
       function renderHeatmap() {
         const grid = document.getElementById("heatmap-grid");
@@ -1736,23 +1787,20 @@
             cell.innerHTML = `
       <div class="cell-label">${esc(label)}</div>
       <div class="cell-pct" style="color:${rTextColor(r)}">${Math.round(r * 100)}%</div>`;
-            cell.addEventListener("mouseenter", (ev) => {
-              document.getElementById("tt-name").textContent = e.name;
-              document.getElementById("tt-pat").textContent =
-                e.pattern || "No pattern tagged";
-              document.getElementById("tt-ret").textContent =
-                `Retention: ${Math.round(r * 100)}% · ${revLabel(e.reviews)}`;
-              document.getElementById("tt-nxt").textContent =
-                `Next review: ${until(e.nextReview)}`;
-              tooltip.classList.add("show");
-            });
-            cell.addEventListener("mousemove", (ev) => {
-              tooltip.style.left = ev.clientX + 14 + "px";
-              tooltip.style.top = ev.clientY - 10 + "px";
-            });
-            cell.addEventListener("mouseleave", () =>
-              tooltip.classList.remove("show"),
+            // Desktop: hover to show, follow the cursor, leave to hide
+            cell.addEventListener("mouseenter", () => fillTooltip(e, r));
+            cell.addEventListener("mousemove", (ev) =>
+              placeTooltip(ev.clientX, ev.clientY),
             );
+            cell.addEventListener("mouseleave", hideTooltip);
+            // Touch/click: tap to show near the cell (no hover on mobile).
+            // stopPropagation so the document handler doesn't instantly hide it.
+            cell.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              const rect = cell.getBoundingClientRect();
+              fillTooltip(e, r);
+              placeTooltip(rect.left + rect.width / 2, rect.bottom + 10);
+            });
             grid.appendChild(cell);
           });
         if (!chartDrawn) {
@@ -1805,6 +1853,7 @@
           showToast(
             `Marked ${felt} — next review ${until(nextReview).toLowerCase()}`,
           );
+          track("review_problem", { felt, stage: newReviews });
         } catch (err) {
           showToast("Error: " + err.message);
           setSyncing(false);
@@ -1847,6 +1896,7 @@
         try {
           await deleteDoc(doc(db, "users", currentUid, "problems", fid));
           showToast("Problem removed");
+          track("delete_problem");
         } catch (err) {
           showToast("Error: " + err.message);
           setSyncing(false);
