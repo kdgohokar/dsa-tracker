@@ -1417,7 +1417,9 @@
         signOut as fbSignOut,
       } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
       import {
-        getFirestore,
+        initializeFirestore,
+        persistentLocalCache,
+        persistentMultipleTabManager,
         collection,
         doc,
         addDoc,
@@ -1427,9 +1429,7 @@
         query,
         orderBy,
         serverTimestamp,
-        enableIndexedDbPersistence,
       } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
       // ─────────────────────────────────────────────────────────────────────
       // STEP 1: Replace this config with your own Firebase project config.
@@ -1447,15 +1447,14 @@
 
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
-      const db = getFirestore(app);
+      // Offline persistence with multi-tab sync
+      // (replaces the deprecated, single-tab enableIndexedDbPersistence)
+      const db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      });
       const provider = new GoogleAuthProvider();
-
-      // Enable offline persistence (Firestore caches locally, syncs when back online)
-      try {
-        await enableIndexedDbPersistence(db);
-      } catch (e) {
-        // Fails silently if already enabled in another tab — that's fine
-      }
 
       // ── Expose auth functions to global scope for onclick handlers ────────
       window.signInWithGoogle = async () => {
@@ -1472,11 +1471,32 @@
       };
 
       // ── SRS config ───────────────────────────────────────────────────────
-      const INTERVALS = {
-        easy: [1, 7, 21, 60],
-        medium: [1, 3, 14, 42],
-        hard: [1, 2, 7, 21],
-      };
+      // Fixed review schedule (days), matching the SRS guide stages:
+      //   0=R1 (+1d), 1=R2 (+3d), 2=R3 (+7d), 3=R4 (+21d), 4=Maint (monthly)
+      const STAGE_DAYS = [1, 3, 7, 21, 30];
+      const MAINT = STAGE_DAYS.length - 1;
+
+      // Given the current stage and how the review felt, return the next stage.
+      // "Easy"/"Medium" promote one stage; "Hard" demotes per the guide's
+      // "if hard" column: R1→R1, R2→R1, R3→R2, R4→Maint, Maint→R3.
+      function nextStage(stage, felt) {
+        if (felt === "hard") return [0, 0, 1, MAINT, 2][stage];
+        return Math.min(stage + 1, MAINT);
+      }
+
+      // HTML-escape user-supplied strings before injecting into innerHTML
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
 
       // ── State ─────────────────────────────────────────────────────────────
       let entries = [];
@@ -1510,7 +1530,7 @@
         // Avatar
         const av = document.getElementById("user-avatar");
         if (user.photoURL) {
-          av.innerHTML = `<img src="${user.photoURL}" alt="${user.displayName || "User"}">`;
+          av.innerHTML = `<img src="${esc(user.photoURL)}" alt="${esc(user.displayName) || "User"}">`;
         } else {
           av.textContent = (user.displayName ||
             user.email ||
@@ -1558,9 +1578,8 @@
 
       // ── Retention model ───────────────────────────────────────────────────
       function calcRetention(e) {
-        const stab = INTERVALS[e.diff] || INTERVALS.medium;
         const daysSince = (Date.now() - e.lastReviewAt) / 86400000;
-        const stability = stab[Math.min(e.reviews, stab.length - 1)];
+        const stability = STAGE_DAYS[Math.min(e.reviews, MAINT)];
         return Math.max(
           0,
           Math.min(1, Math.exp((-0.693 * daysSince) / stability)),
@@ -1658,7 +1677,6 @@
         if (!name || !selectedDiff || !currentUid) return;
 
         const diff = selectedDiff;
-        const intervals = INTERVALS[diff];
         const now = Date.now();
         const doc_data = {
           name,
@@ -1668,7 +1686,7 @@
           reviews: 0,
           solvedAt: now,
           lastReviewAt: now,
-          nextReview: now + intervals[0] * 86400000,
+          nextReview: now + STAGE_DAYS[0] * 86400000,
           createdAt: serverTimestamp(),
         };
 
@@ -1713,8 +1731,10 @@
             const cell = document.createElement("div");
             cell.className = "hm-cell";
             cell.style.background = rColor(r);
+            const label =
+              e.name.length > 12 ? e.name.slice(0, 11) + "…" : e.name;
             cell.innerHTML = `
-      <div class="cell-label">${e.name.length > 12 ? e.name.slice(0, 11) + "…" : e.name}</div>
+      <div class="cell-label">${esc(label)}</div>
       <div class="cell-pct" style="color:${rTextColor(r)}">${Math.round(r * 100)}%</div>`;
             cell.addEventListener("mouseenter", (ev) => {
               document.getElementById("tt-name").textContent = e.name;
@@ -1755,8 +1775,8 @@
             (e) => `
     <div class="due-card">
       <div class="due-info">
-        <div class="due-name">${e.name}</div>
-        <div class="due-meta">${e.pattern || "—"} · ${revLabel(e.reviews)} due · ${e.source}</div>
+        <div class="due-name">${esc(e.name)}</div>
+        <div class="due-meta">${esc(e.pattern) || "—"} · ${revLabel(e.reviews)} due · ${esc(e.source)}</div>
       </div>
       <div class="mark-btns">
         <button class="mark-btn mark-easy"   onclick="markReviewed('${e.firestoreId}','easy')">Easy</button>
@@ -1771,10 +1791,9 @@
       window.markReviewed = async (fid, felt) => {
         const e = entries.find((x) => x.firestoreId === fid);
         if (!e || !currentUid) return;
-        const intervals = INTERVALS[felt];
-        const newReviews = Math.min(e.reviews + 1, intervals.length - 1);
+        const newReviews = nextStage(e.reviews, felt);
         const now = Date.now();
-        const nextReview = now + intervals[newReviews] * 86400000;
+        const nextReview = now + STAGE_DAYS[newReviews] * 86400000;
         setSyncing(true);
         try {
           await updateDoc(doc(db, "users", currentUid, "problems", fid), {
@@ -1809,8 +1828,8 @@
         ${Math.round(r * 100)}%
       </div>
       <div class="prob-info">
-        <div class="prob-name">${e.name}</div>
-        <div class="prob-meta">${e.pattern || "No pattern"} · ${e.source} · Solved ${fmtDate(e.solvedAt)}</div>
+        <div class="prob-name">${esc(e.name)}</div>
+        <div class="prob-meta">${esc(e.pattern) || "No pattern"} · ${esc(e.source)} · Solved ${fmtDate(e.solvedAt)}</div>
         <div class="prob-next">Next review: ${until(e.nextReview)}</div>
       </div>
       <span class="tag tag-${e.diff}">${e.diff}</span>
