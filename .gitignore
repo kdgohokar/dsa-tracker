@@ -1,0 +1,14 @@
+# Firebase
+.firebase/
+*-debug.log
+firebase-debug.log
+ui-debug.log
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+
+# Service account keys — never commit
+*serviceAccount*.json

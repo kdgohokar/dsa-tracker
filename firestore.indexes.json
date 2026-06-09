@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "problems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "solvedAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

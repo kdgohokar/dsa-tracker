@@ -1,0 +1,1947 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DSA Revision Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d27;
+        --card: #242736;
+        --border: rgba(255, 255, 255, 0.08);
+        --border-md: rgba(255, 255, 255, 0.13);
+        --text: #e8e6f0;
+        --muted: #8b8fa8;
+        --hint: #555870;
+        --accent: #7c6ff7;
+        --accent-dim: #3d3878;
+        --accent-glow: rgba(124, 111, 247, 0.15);
+        --success: #2ecc8a;
+        --success-dim: #133d28;
+        --warning: #f5a623;
+        --warning-dim: #3d2c0a;
+        --danger: #e85d5d;
+        --danger-dim: #3d1515;
+        --mono: "JetBrains Mono", monospace;
+        --sans: "Inter", system-ui, sans-serif;
+        --r-sm: 6px;
+        --r-md: 10px;
+        --r-lg: 14px;
+      }
+
+      html {
+        font-size: 15px;
+      }
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Auth screen ── */
+      #auth-screen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 2rem;
+      }
+      .auth-logo {
+        font-family: var(--mono);
+        font-size: 1.4rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .auth-logo-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 12px var(--accent);
+        animation: pulse 2.5s ease-in-out infinite;
+      }
+      .auth-sub {
+        font-size: 0.85rem;
+        color: var(--muted);
+        text-align: center;
+        max-width: 320px;
+        line-height: 1.6;
+      }
+      .auth-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 2rem 2.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.25rem;
+        width: 100%;
+        max-width: 340px;
+      }
+      .google-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 11px 20px;
+        background: var(--card);
+        border: 1px solid var(--border-md);
+        border-radius: var(--r-sm);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .google-btn:hover {
+        border-color: var(--accent-dim);
+        background: var(--accent-glow);
+      }
+      .google-btn svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+      }
+      .auth-note {
+        font-size: 0.72rem;
+        color: var(--hint);
+        text-align: center;
+      }
+
+      /* ── Loading screen ── */
+      #loading-screen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .spinner {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid var(--border-md);
+        border-top-color: var(--accent);
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .loading-text {
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      /* ── App ── */
+      #app {
+        display: none;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 1.25rem 4rem;
+      }
+
+      /* ── Header ── */
+      .header {
+        padding: 1.75rem 0 1.25rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 1.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .header-left {
+      }
+      .logo {
+        font-family: var(--mono);
+        font-size: 1.2rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 10px var(--accent);
+        animation: pulse 2.5s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+      .logo-sub {
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .header-stats {
+        display: flex;
+        gap: 1.25rem;
+      }
+      .hstat {
+        text-align: right;
+      }
+      .hstat-v {
+        font-family: var(--mono);
+        font-size: 1.3rem;
+        font-weight: 500;
+        line-height: 1;
+      }
+      .hstat-l {
+        font-size: 0.68rem;
+        color: var(--muted);
+        margin-top: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .user-area {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .user-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--accent-glow);
+        border: 1px solid var(--accent-dim);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--accent);
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+      .sync-indicator {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.72rem;
+        color: var(--hint);
+      }
+      .sync-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+      }
+      .sync-dot.syncing {
+        background: var(--warning);
+        animation: pulse 0.8s ease-in-out infinite;
+      }
+      .sync-dot.offline {
+        background: var(--danger);
+      }
+      .signout-btn {
+        font-size: 0.72rem;
+        color: var(--hint);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 3px 6px;
+        border-radius: var(--r-sm);
+        transition: color 0.15s;
+      }
+      .signout-btn:hover {
+        color: var(--danger);
+      }
+
+      /* ── Nav ── */
+      .nav {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 1.75rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 4px;
+        width: fit-content;
+        flex-wrap: wrap;
+      }
+      .nav-btn {
+        font-family: var(--sans);
+        font-size: 0.82rem;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: var(--r-sm);
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .nav-btn:hover {
+        color: var(--text);
+      }
+      .nav-btn.active {
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid var(--border-md);
+      }
+      .nav-btn .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: var(--danger);
+        color: #fff;
+        font-size: 0.62rem;
+        font-weight: 600;
+        margin-left: 5px;
+        vertical-align: middle;
+      }
+
+      /* ── Panels ── */
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+
+      /* ── Section label ── */
+      .section-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--hint);
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+      }
+
+      /* ── Heatmap ── */
+      .heatmap {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+        gap: 6px;
+        margin-bottom: 1.75rem;
+      }
+      .hm-cell {
+        aspect-ratio: 1;
+        border-radius: var(--r-sm);
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition:
+          transform 0.1s,
+          border-color 0.1s;
+        overflow: hidden;
+      }
+      .hm-cell:hover {
+        transform: scale(1.06);
+        border-color: var(--border-md);
+      }
+      .cell-label {
+        font-family: var(--mono);
+        font-size: 0.58rem;
+        text-align: center;
+        line-height: 1.2;
+        padding: 0 3px;
+        color: rgba(255, 255, 255, 0.85);
+      }
+      .cell-pct {
+        font-family: var(--mono);
+        font-size: 0.62rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.55);
+      }
+      .hm-empty {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--hint);
+        font-size: 0.85rem;
+        border: 1px dashed var(--border);
+        border-radius: var(--r-md);
+      }
+
+      /* ── Chart ── */
+      .chart-wrap {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .chart-title {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--hint);
+        margin-bottom: 1rem;
+      }
+      #fc-canvas {
+        width: 100% !important;
+        height: 160px !important;
+      }
+
+      /* ── Form ── */
+      .form-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.75rem;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      @media (max-width: 520px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .field-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 5px;
+      }
+      .field-input {
+        width: 100%;
+        font-family: var(--mono);
+        font-size: 0.85rem;
+        padding: 8px 12px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--r-sm);
+        color: var(--text);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .field-input:focus {
+        border-color: var(--accent);
+      }
+      .field-input::placeholder {
+        color: var(--hint);
+      }
+      select.field-input {
+        cursor: pointer;
+      }
+      select.field-input option {
+        background: var(--card);
+      }
+      .diff-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .diff-btn {
+        flex: 1;
+        font-family: var(--sans);
+        font-size: 0.78rem;
+        font-weight: 500;
+        padding: 8px 0;
+        border-radius: var(--r-sm);
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .diff-btn:hover {
+        border-color: var(--border-md);
+        color: var(--text);
+      }
+      .diff-btn.sel-easy {
+        background: var(--success-dim);
+        border-color: var(--success);
+        color: var(--success);
+      }
+      .diff-btn.sel-medium {
+        background: var(--warning-dim);
+        border-color: var(--warning);
+        color: var(--warning);
+      }
+      .diff-btn.sel-hard {
+        background: var(--danger-dim);
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+      .submit-btn {
+        font-family: var(--sans);
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 9px 20px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: var(--r-sm);
+        cursor: pointer;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+      }
+      .submit-btn:hover {
+        opacity: 0.88;
+      }
+      .submit-btn:active {
+        transform: scale(0.98);
+      }
+      .submit-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      /* ── Problem list ── */
+      .prob-list {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .prob-row {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: border-color 0.15s;
+      }
+      .prob-row:hover {
+        border-color: var(--border-md);
+      }
+      .prob-retention {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 0.62rem;
+        font-weight: 500;
+        flex-shrink: 0;
+      }
+      .prob-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .prob-name {
+        font-family: var(--mono);
+        font-size: 0.85rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .prob-meta {
+        font-size: 0.7rem;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .prob-next {
+        font-size: 0.7rem;
+        color: var(--hint);
+      }
+      .tag {
+        font-size: 0.66rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .tag-easy {
+        background: var(--success-dim);
+        color: var(--success);
+      }
+      .tag-medium {
+        background: var(--warning-dim);
+        color: var(--warning);
+      }
+      .tag-hard {
+        background: var(--danger-dim);
+        color: var(--danger);
+      }
+      .rev-label {
+        font-family: var(--mono);
+        font-size: 0.66rem;
+        color: var(--accent);
+        background: var(--accent-glow);
+        border: 1px solid var(--accent-dim);
+        padding: 2px 7px;
+        border-radius: 999px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .del-btn {
+        background: none;
+        border: none;
+        color: var(--hint);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: color 0.15s;
+        flex-shrink: 0;
+      }
+      .del-btn:hover {
+        color: var(--danger);
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--hint);
+        font-size: 0.875rem;
+        border: 1px dashed var(--border);
+        border-radius: var(--r-lg);
+      }
+      .empty-state p {
+        margin-top: 0.5rem;
+        font-size: 0.78rem;
+      }
+
+      /* ── Due ── */
+      .due-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 7px;
+        transition: border-color 0.15s;
+      }
+      .due-card:hover {
+        border-color: var(--accent-dim);
+      }
+      .due-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .due-name {
+        font-family: var(--mono);
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+      .due-meta {
+        font-size: 0.7rem;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .mark-btns {
+        display: flex;
+        gap: 5px;
+        flex-shrink: 0;
+      }
+      .mark-btn {
+        font-family: var(--sans);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: var(--r-sm);
+        border: 1px solid;
+        cursor: pointer;
+        transition: all 0.15s;
+        background: transparent;
+      }
+      .mark-easy {
+        border-color: var(--success);
+        color: var(--success);
+      }
+      .mark-medium {
+        border-color: var(--warning);
+        color: var(--warning);
+      }
+      .mark-hard {
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+      .mark-easy:hover {
+        background: var(--success-dim);
+      }
+      .mark-medium:hover {
+        background: var(--warning-dim);
+      }
+      .mark-hard:hover {
+        background: var(--danger-dim);
+      }
+
+      /* ── Guide ── */
+      .guide-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 1.75rem;
+      }
+      @media (max-width: 580px) {
+        .guide-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .guide-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        padding: 14px 16px;
+      }
+      .guide-card.hi {
+        border-color: var(--accent-dim);
+        background: var(--accent-glow);
+      }
+      .guide-card.bad {
+        border-color: rgba(232, 93, 93, 0.25);
+      }
+      .gc-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .gc-icon {
+        width: 26px;
+        height: 26px;
+        border-radius: var(--r-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+      .gc-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .gc-body {
+        font-size: 0.78rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .gc-tag {
+        display: inline-block;
+        font-size: 0.66rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 999px;
+        margin-top: 7px;
+      }
+      .srs-wrap {
+        overflow-x: auto;
+        margin-bottom: 1.75rem;
+      }
+      .srs-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+      }
+      .srs-table thead th {
+        text-align: left;
+        padding: 8px 12px;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--hint);
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .srs-table tbody tr {
+        border-bottom: 1px solid var(--border);
+      }
+      .srs-table tbody tr:last-child {
+        border-bottom: none;
+      }
+      .srs-table td {
+        padding: 10px 12px;
+        color: var(--muted);
+        vertical-align: top;
+      }
+      .srs-table td:first-child {
+        color: var(--text);
+        font-weight: 500;
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+      .int-tag {
+        display: block;
+        font-size: 0.66rem;
+        font-weight: 600;
+        color: var(--accent);
+        margin-top: 2px;
+      }
+      .rule-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .rule {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+      }
+      .rule-n {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent-glow);
+        border: 1px solid var(--accent-dim);
+        color: var(--accent);
+        font-size: 0.7rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .rule-body {
+        font-size: 0.8rem;
+        line-height: 1.5;
+      }
+      .rule-body span {
+        display: block;
+        color: var(--muted);
+        margin-top: 3px;
+        font-size: 0.76rem;
+      }
+
+      /* ── Tooltip ── */
+      .tooltip {
+        position: fixed;
+        z-index: 100;
+        background: var(--card);
+        border: 1px solid var(--border-md);
+        border-radius: var(--r-md);
+        padding: 8px 12px;
+        font-size: 0.76rem;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.12s;
+        max-width: 200px;
+        line-height: 1.5;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      .tooltip.show {
+        opacity: 1;
+      }
+      .tt-name {
+        font-family: var(--mono);
+        font-weight: 500;
+        margin-bottom: 2px;
+      }
+      .tt-row {
+        color: var(--muted);
+        font-size: 0.7rem;
+      }
+
+      /* ── Toast ── */
+      .toast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        background: var(--card);
+        border: 1px solid var(--border-md);
+        border-radius: var(--r-md);
+        padding: 10px 16px;
+        font-size: 0.82rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        transform: translateY(20px);
+        opacity: 0;
+        transition: all 0.2s;
+        z-index: 200;
+        border-left: 3px solid var(--accent);
+        max-width: 320px;
+      }
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-md);
+        border-radius: 3px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .logo-dot,
+        .auth-logo-dot,
+        .spinner {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading -->
+    <div id="loading-screen">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading…</div>
+    </div>
+
+    <!-- Auth -->
+    <div id="auth-screen" style="display: none">
+      <div>
+        <div class="auth-logo">
+          <div class="auth-logo-dot"></div>
+          dsa-tracker
+        </div>
+        <div class="auth-sub" style="margin-top: 8px">
+          Spaced repetition for interview prep.<br />Sign in to sync across all
+          your devices.
+        </div>
+      </div>
+      <div class="auth-card">
+        <button class="google-btn" onclick="signInWithGoogle()">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4"
+            />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              fill="#EA4335"
+            />
+          </svg>
+          Continue with Google
+        </button>
+        <div class="auth-note">
+          Your data is private to your Google account.
+        </div>
+      </div>
+    </div>
+
+    <!-- App -->
+    <div id="app">
+      <div class="wrap">
+        <header class="header">
+          <div class="header-left">
+            <div class="logo">
+              <div class="logo-dot"></div>
+              dsa-tracker
+            </div>
+            <div class="logo-sub">
+              Spaced repetition · synced across devices
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="header-stats">
+              <div class="hstat">
+                <div class="hstat-v" id="hs-total">0</div>
+                <div class="hstat-l">Problems</div>
+              </div>
+              <div class="hstat">
+                <div class="hstat-v" id="hs-due" style="color: var(--warning)">
+                  0
+                </div>
+                <div class="hstat-l">Due today</div>
+              </div>
+              <div class="hstat">
+                <div
+                  class="hstat-v"
+                  id="hs-owned"
+                  style="color: var(--success)"
+                >
+                  0
+                </div>
+                <div class="hstat-l">Owned</div>
+              </div>
+            </div>
+            <div class="user-area">
+              <div class="sync-indicator">
+                <div class="sync-dot" id="sync-dot"></div>
+                <span id="sync-label">Synced</span>
+              </div>
+              <div class="user-avatar" id="user-avatar"></div>
+              <button class="signout-btn" onclick="signOut()">Sign out</button>
+            </div>
+          </div>
+        </header>
+
+        <nav class="nav">
+          <button class="nav-btn active" onclick="switchTab('heatmap', this)">
+            Retention map
+          </button>
+          <button class="nav-btn" onclick="switchTab('log', this)">
+            Log problem
+          </button>
+          <button class="nav-btn" onclick="switchTab('due', this)">
+            Due <span class="badge" id="due-badge" style="display: none"></span>
+          </button>
+          <button class="nav-btn" onclick="switchTab('all', this)">
+            All problems
+          </button>
+          <button class="nav-btn" onclick="switchTab('guide', this)">
+            SRS guide
+          </button>
+        </nav>
+
+        <!-- Heatmap -->
+        <div id="panel-heatmap" class="panel active">
+          <div class="section-label">
+            Retention map — colour = memory strength right now
+          </div>
+          <div class="heatmap" id="heatmap-grid"></div>
+          <div class="chart-wrap">
+            <div class="chart-title">
+              Forgetting curve — why the intervals work
+            </div>
+            <canvas id="fc-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Log -->
+        <div id="panel-log" class="panel">
+          <div class="form-card">
+            <div class="form-grid">
+              <div>
+                <div class="field-label">Problem name</div>
+                <input
+                  class="field-input"
+                  id="f-name"
+                  type="text"
+                  placeholder="e.g. Coin Change"
+                  autocomplete="off"
+                />
+              </div>
+              <div>
+                <div class="field-label">Pattern / topic</div>
+                <input
+                  class="field-input"
+                  id="f-pattern"
+                  type="text"
+                  placeholder="e.g. 1D DP, knapsack"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+            <div style="margin-bottom: 12px">
+              <div class="field-label">Source</div>
+              <select
+                class="field-input"
+                id="f-source"
+                style="max-width: 220px"
+              >
+                <option>Leetcode</option>
+                <option>Neetcode 150</option>
+                <option>Striver DP</option>
+                <option>Striver Graph</option>
+                <option>Custom</option>
+              </select>
+            </div>
+            <div class="field-label" style="margin-bottom: 6px">
+              How did it feel?
+            </div>
+            <div class="diff-row">
+              <button
+                class="diff-btn"
+                id="db-easy"
+                onclick="selectDiff('easy')"
+              >
+                Solved clean
+              </button>
+              <button
+                class="diff-btn"
+                id="db-medium"
+                onclick="selectDiff('medium')"
+              >
+                Some struggle
+              </button>
+              <button
+                class="diff-btn"
+                id="db-hard"
+                onclick="selectDiff('hard')"
+              >
+                Needed hint / failed
+              </button>
+            </div>
+            <button
+              class="submit-btn"
+              id="submit-btn"
+              onclick="addProblem()"
+              disabled
+            >
+              Log problem
+            </button>
+          </div>
+        </div>
+
+        <!-- Due -->
+        <div id="panel-due" class="panel">
+          <div
+            style="margin-bottom: 1.25rem; font-size: 1rem; font-weight: 600"
+          >
+            Due for review
+          </div>
+          <div id="due-list"></div>
+        </div>
+
+        <!-- All -->
+        <div id="panel-all" class="panel">
+          <div class="section-label" style="margin-bottom: 0.75rem">
+            All logged problems
+          </div>
+          <div class="prob-list" id="all-list"></div>
+        </div>
+
+        <!-- Guide -->
+        <div id="panel-guide" class="panel">
+          <div class="section-label" style="margin-bottom: 0.75rem">
+            Revision methods — ranked
+          </div>
+          <div class="guide-grid">
+            <div class="guide-card hi">
+              <div class="gc-head">
+                <div
+                  class="gc-icon"
+                  style="background: rgba(124, 111, 247, 0.2)"
+                >
+                  &#x1F9E0;
+                </div>
+                <div class="gc-title">Active recall (blank page)</div>
+              </div>
+              <div class="gc-body">
+                Close everything. Write the full solution from memory — data
+                structures, edge cases, complexity. Only then compare.
+              </div>
+              <span
+                class="gc-tag"
+                style="background: var(--success-dim); color: var(--success)"
+                >Best method</span
+              >
+            </div>
+            <div class="guide-card hi">
+              <div class="gc-head">
+                <div
+                  class="gc-icon"
+                  style="background: rgba(124, 111, 247, 0.2)"
+                >
+                  &#x23F1;
+                </div>
+                <div class="gc-title">Timed re-solve</div>
+              </div>
+              <div class="gc-body">
+                Set a timer (15 min medium, 25 min hard). Solve completely, no
+                hints. If you go over, mark as hard — review sooner.
+              </div>
+              <span
+                class="gc-tag"
+                style="background: var(--success-dim); color: var(--success)"
+                >For mocks</span
+              >
+            </div>
+            <div class="guide-card">
+              <div class="gc-head">
+                <div
+                  class="gc-icon"
+                  style="background: rgba(245, 166, 35, 0.15)"
+                >
+                  &#x1F4AC;
+                </div>
+                <div class="gc-title">Rubber duck explain</div>
+              </div>
+              <div class="gc-body">
+                Speak the solution out loud as if teaching it. Explain why each
+                step works. Gaps in explanation = gaps in understanding.
+              </div>
+              <span
+                class="gc-tag"
+                style="background: var(--warning-dim); color: var(--warning)"
+                >Pattern depth</span
+              >
+            </div>
+            <div class="guide-card">
+              <div class="gc-head">
+                <div
+                  class="gc-icon"
+                  style="background: rgba(245, 166, 35, 0.15)"
+                >
+                  &#x1F500;
+                </div>
+                <div class="gc-title">Variant drilling</div>
+              </div>
+              <div class="gc-body">
+                After solving, mutate the problem: change constraints, flip
+                min/max, add a dimension. You retain the pattern, not just the
+                solution.
+              </div>
+              <span
+                class="gc-tag"
+                style="background: var(--warning-dim); color: var(--warning)"
+                >Hard tier prep</span
+              >
+            </div>
+            <div class="guide-card bad">
+              <div class="gc-head">
+                <div
+                  class="gc-icon"
+                  style="background: rgba(232, 93, 93, 0.15)"
+                >
+                  &#x1F4D6;
+                </div>
+                <div class="gc-title">Re-reading your solution</div>
+              </div>
+              <div class="gc-body">
+                Feels productive. Your brain pattern-matches and says "yes I
+                know this." Mostly wasted time — recognition, not recall.
+              </div>
+              <span
+                class="gc-tag"
+                style="background: var(--danger-dim); color: var(--danger)"
+                >Avoid</span
+              >
+            </div>
+            <div class="guide-card bad">
+              <div class="gc-head">
+                <div
+                  class="gc-icon"
+                  style="background: rgba(232, 93, 93, 0.15)"
+                >
+                  &#x1F4FA;
+                </div>
+                <div class="gc-title">Rewatching video solutions</div>
+              </div>
+              <div class="gc-body">
+                Only useful the first time you see a pattern. Re-watching
+                Striver/Neetcode for solved problems is passive recognition.
+              </div>
+              <span
+                class="gc-tag"
+                style="background: var(--danger-dim); color: var(--danger)"
+                >Avoid for revision</span
+              >
+            </div>
+          </div>
+
+          <div class="section-label" style="margin-bottom: 0.75rem">
+            Spaced repetition intervals
+          </div>
+          <div class="srs-wrap">
+            <table class="srs-table">
+              <thead>
+                <tr>
+                  <th>Review</th>
+                  <th>When</th>
+                  <th>Method</th>
+                  <th>If hard</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>R1<span class="int-tag">+1 day</span></td>
+                  <td>Next morning</td>
+                  <td>
+                    Blank page. Full solution + complexity + edge cases. 15 min
+                    max.
+                  </td>
+                  <td>Stay at R1.</td>
+                </tr>
+                <tr>
+                  <td>R2<span class="int-tag">+3 days</span></td>
+                  <td>3 days after R1</td>
+                  <td>Timed re-solve. Explain pattern aloud first.</td>
+                  <td>Reset to R1.</td>
+                </tr>
+                <tr>
+                  <td>R3<span class="int-tag">+7 days</span></td>
+                  <td>1 week after R2</td>
+                  <td>Solve a variant (changed constraints).</td>
+                  <td>3-day interval.</td>
+                </tr>
+                <tr>
+                  <td>R4<span class="int-tag">+21 days</span></td>
+                  <td>3 weeks after R3</td>
+                  <td>Cold re-solve, no notes. If automatic — owned.</td>
+                  <td>Monthly pool.</td>
+                </tr>
+                <tr>
+                  <td>Maint.<span class="int-tag">Monthly</span></td>
+                  <td>Once a month</td>
+                  <td>10–15 problems, 2-hour cold run.</td>
+                  <td>Reset to R3.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section-label" style="margin-bottom: 0.75rem">
+            Golden rules
+          </div>
+          <div class="rule-list">
+            <div class="rule">
+              <div class="rule-n">1</div>
+              <div class="rule-body">
+                The 30-minute rule<span
+                  >Spend 30 min genuinely stuck before looking at any hint. That
+                  discomfort is where retrieval pathways form.</span
+                >
+              </div>
+            </div>
+            <div class="rule">
+              <div class="rule-n">2</div>
+              <div class="rule-body">
+                Write your "why", not just the "what"<span
+                  >"This is sliding window because… the invariant I maintain
+                  is…". Forces pattern abstraction, which transfers to new
+                  problems.</span
+                >
+              </div>
+            </div>
+            <div class="rule">
+              <div class="rule-n">3</div>
+              <div class="rule-body">
+                Group reviews by pattern, not by date<span
+                  >All two-pointer together, then all DP knapsack. Brain builds
+                  abstraction, not individual solution memory.</span
+                >
+              </div>
+            </div>
+            <div class="rule">
+              <div class="rule-n">4</div>
+              <div class="rule-body">
+                Never review the same day you solved<span
+                  >Same-day review is re-reading in disguise — solution is still
+                  in working memory. Minimum gap: 1 sleep cycle.</span
+                >
+              </div>
+            </div>
+            <div class="rule">
+              <div class="rule-n">5</div>
+              <div class="rule-body">
+                The 3-second test<span
+                  >Within 3 seconds of seeing a title, name: the pattern, key
+                  data structure, time complexity. If you can't — it belongs in
+                  R1.</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip">
+      <div class="tt-name" id="tt-name"></div>
+      <div class="tt-row" id="tt-pat"></div>
+      <div class="tt-row" id="tt-ret"></div>
+      <div class="tt-row" id="tt-nxt"></div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Firebase SDK (modular, loaded as ESM) -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import {
+        getAuth,
+        GoogleAuthProvider,
+        signInWithPopup,
+        onAuthStateChanged,
+        signOut as fbSignOut,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+      import {
+        getFirestore,
+        collection,
+        doc,
+        addDoc,
+        updateDoc,
+        deleteDoc,
+        onSnapshot,
+        query,
+        orderBy,
+        serverTimestamp,
+        enableIndexedDbPersistence,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+
+      // ─────────────────────────────────────────────────────────────────────
+      // STEP 1: Replace this config with your own Firebase project config.
+      // Get it from: Firebase Console → Project Settings → Your apps → SDK setup
+      // ─────────────────────────────────────────────────────────────────────
+      const firebaseConfig = {
+        apiKey: "AIzaSyAD0BBunL0daIx6gDt0mIFwI9-QAXDIXmw",
+        authDomain: "dsa-tracker-c9277.firebaseapp.com",
+        projectId: "dsa-tracker-c9277",
+        storageBucket: "dsa-tracker-c9277.firebasestorage.app",
+        messagingSenderId: "567473178464",
+        appId: "1:567473178464:web:1230458eea9e92d9744005",
+        measurementId: "G-PDVTE010ER",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const provider = new GoogleAuthProvider();
+
+      // Enable offline persistence (Firestore caches locally, syncs when back online)
+      try {
+        await enableIndexedDbPersistence(db);
+      } catch (e) {
+        // Fails silently if already enabled in another tab — that's fine
+      }
+
+      // ── Expose auth functions to global scope for onclick handlers ────────
+      window.signInWithGoogle = async () => {
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (e) {
+          showToast("Sign-in failed: " + e.message);
+        }
+      };
+
+      window.signOut = async () => {
+        if (unsubscribe) unsubscribe();
+        await fbSignOut(auth);
+      };
+
+      // ── SRS config ───────────────────────────────────────────────────────
+      const INTERVALS = {
+        easy: [1, 7, 21, 60],
+        medium: [1, 3, 14, 42],
+        hard: [1, 2, 7, 21],
+      };
+
+      // ── State ─────────────────────────────────────────────────────────────
+      let entries = [];
+      let selectedDiff = null;
+      let unsubscribe = null;
+      let currentUid = null;
+      let chartDrawn = false;
+
+      // ── Auth state listener ───────────────────────────────────────────────
+      onAuthStateChanged(auth, (user) => {
+        document.getElementById("loading-screen").style.display = "none";
+        if (user) {
+          currentUid = user.uid;
+          showApp(user);
+          subscribeToProblems(user.uid);
+        } else {
+          currentUid = null;
+          if (unsubscribe) {
+            unsubscribe();
+            unsubscribe = null;
+          }
+          entries = [];
+          document.getElementById("app").style.display = "none";
+          document.getElementById("auth-screen").style.display = "flex";
+        }
+      });
+
+      function showApp(user) {
+        document.getElementById("auth-screen").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        // Avatar
+        const av = document.getElementById("user-avatar");
+        if (user.photoURL) {
+          av.innerHTML = `<img src="${user.photoURL}" alt="${user.displayName || "User"}">`;
+        } else {
+          av.textContent = (user.displayName ||
+            user.email ||
+            "U")[0].toUpperCase();
+        }
+      }
+
+      // ── Firestore real-time listener ──────────────────────────────────────
+      function subscribeToProblems(uid) {
+        setSyncing(true);
+        const q = query(
+          collection(db, "users", uid, "problems"),
+          orderBy("solvedAt", "desc"),
+        );
+        unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            entries = snapshot.docs.map((d) => ({
+              firestoreId: d.id,
+              ...d.data(),
+            }));
+            setSyncing(false);
+            refreshAll();
+          },
+          (err) => {
+            console.error(err);
+            setOffline();
+          },
+        );
+      }
+
+      // ── Sync indicator ────────────────────────────────────────────────────
+      function setSyncing(v) {
+        const dot = document.getElementById("sync-dot");
+        const lbl = document.getElementById("sync-label");
+        dot.className = "sync-dot" + (v ? " syncing" : "");
+        lbl.textContent = v ? "Syncing…" : "Synced";
+      }
+      function setOffline() {
+        document.getElementById("sync-dot").className = "sync-dot offline";
+        document.getElementById("sync-label").textContent = "Offline";
+      }
+      navigator.addEventListener?.("offline", setOffline);
+      navigator.addEventListener?.("online", () => setSyncing(false));
+
+      // ── Retention model ───────────────────────────────────────────────────
+      function calcRetention(e) {
+        const stab = INTERVALS[e.diff] || INTERVALS.medium;
+        const daysSince = (Date.now() - e.lastReviewAt) / 86400000;
+        const stability = stab[Math.min(e.reviews, stab.length - 1)];
+        return Math.max(
+          0,
+          Math.min(1, Math.exp((-0.693 * daysSince) / stability)),
+        );
+      }
+      function rColor(r) {
+        if (r > 0.75) return `rgba(46,204,138,${0.15 + r * 0.5})`;
+        if (r > 0.4) return `rgba(245,166,35,${0.15 + r * 0.5})`;
+        return `rgba(232,93,93,${0.2 + (1 - r) * 0.4})`;
+      }
+      function rTextColor(r) {
+        if (r > 0.75) return "rgba(46,204,138,0.85)";
+        if (r > 0.4) return "rgba(245,166,35,0.85)";
+        return "rgba(232,93,93,0.85)";
+      }
+
+      // ── Helpers ───────────────────────────────────────────────────────────
+      const until = (ts) => {
+        const d = Math.round((ts - Date.now()) / 86400000);
+        return d <= 0 ? "Today" : d === 1 ? "Tomorrow" : `In ${d} days`;
+      };
+      const fmtDate = (ts) =>
+        new Date(ts).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+        });
+      const revLabel = (n) =>
+        ["R1", "R2", "R3", "R4", "Maint."][Math.min(n, 4)];
+      const isDue = (e) => e.nextReview <= Date.now();
+
+      // ── UI helpers ────────────────────────────────────────────────────────
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2600);
+      }
+
+      function refreshAll() {
+        updateStats();
+        const active = document.querySelector(".panel.active");
+        if (active?.id === "panel-heatmap") renderHeatmap();
+        if (active?.id === "panel-due") renderDue();
+        if (active?.id === "panel-all") renderAll();
+      }
+
+      function updateStats() {
+        const due = entries.filter(isDue).length;
+        document.getElementById("hs-total").textContent = entries.length;
+        document.getElementById("hs-due").textContent = due;
+        document.getElementById("hs-owned").textContent = entries.filter(
+          (e) => e.reviews >= 4,
+        ).length;
+        const badge = document.getElementById("due-badge");
+        badge.textContent = due;
+        badge.style.display = due > 0 ? "inline-flex" : "none";
+      }
+
+      // ── Tab switching ─────────────────────────────────────────────────────
+      window.switchTab = (id, btn) => {
+        document
+          .querySelectorAll(".nav-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document
+          .querySelectorAll(".panel")
+          .forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + id).classList.add("active");
+        if (id === "heatmap") renderHeatmap();
+        if (id === "due") renderDue();
+        if (id === "all") renderAll();
+      };
+
+      // ── Form ──────────────────────────────────────────────────────────────
+      window.selectDiff = (d) => {
+        selectedDiff = d;
+        ["easy", "medium", "hard"].forEach((x) => {
+          document.getElementById("db-" + x).className =
+            "diff-btn" + (d === x ? " sel-" + x : "");
+        });
+        document.getElementById("submit-btn").disabled = !document
+          .getElementById("f-name")
+          .value.trim();
+      };
+
+      document.getElementById("f-name").addEventListener("input", (e) => {
+        document.getElementById("submit-btn").disabled =
+          !e.target.value.trim() || !selectedDiff;
+      });
+
+      window.addProblem = async () => {
+        const name = document.getElementById("f-name").value.trim();
+        const pattern = document.getElementById("f-pattern").value.trim();
+        const source = document.getElementById("f-source").value;
+        if (!name || !selectedDiff || !currentUid) return;
+
+        const diff = selectedDiff;
+        const intervals = INTERVALS[diff];
+        const now = Date.now();
+        const doc_data = {
+          name,
+          pattern,
+          source,
+          diff,
+          reviews: 0,
+          solvedAt: now,
+          lastReviewAt: now,
+          nextReview: now + intervals[0] * 86400000,
+          createdAt: serverTimestamp(),
+        };
+
+        setSyncing(true);
+        try {
+          await addDoc(
+            collection(db, "users", currentUid, "problems"),
+            doc_data,
+          );
+          showToast(
+            `"${name}" logged — R1 due ${until(doc_data.nextReview).toLowerCase()}`,
+          );
+          // Reset form
+          document.getElementById("f-name").value = "";
+          document.getElementById("f-pattern").value = "";
+          selectedDiff = null;
+          ["easy", "medium", "hard"].forEach(
+            (x) => (document.getElementById("db-" + x).className = "diff-btn"),
+          );
+          document.getElementById("submit-btn").disabled = true;
+        } catch (e) {
+          showToast("Error saving: " + e.message);
+          setSyncing(false);
+        }
+      };
+
+      // ── Heatmap ───────────────────────────────────────────────────────────
+      const tooltip = document.getElementById("tooltip");
+
+      function renderHeatmap() {
+        const grid = document.getElementById("heatmap-grid");
+        if (entries.length === 0) {
+          grid.innerHTML =
+            '<div class="hm-empty">No problems logged yet.<br>Add problems in the "Log problem" tab.</div>';
+          return;
+        }
+        grid.innerHTML = "";
+        [...entries]
+          .sort((a, b) => calcRetention(a) - calcRetention(b))
+          .forEach((e) => {
+            const r = calcRetention(e);
+            const cell = document.createElement("div");
+            cell.className = "hm-cell";
+            cell.style.background = rColor(r);
+            cell.innerHTML = `
+      <div class="cell-label">${e.name.length > 12 ? e.name.slice(0, 11) + "…" : e.name}</div>
+      <div class="cell-pct" style="color:${rTextColor(r)}">${Math.round(r * 100)}%</div>`;
+            cell.addEventListener("mouseenter", (ev) => {
+              document.getElementById("tt-name").textContent = e.name;
+              document.getElementById("tt-pat").textContent =
+                e.pattern || "No pattern tagged";
+              document.getElementById("tt-ret").textContent =
+                `Retention: ${Math.round(r * 100)}% · ${revLabel(e.reviews)}`;
+              document.getElementById("tt-nxt").textContent =
+                `Next review: ${until(e.nextReview)}`;
+              tooltip.classList.add("show");
+            });
+            cell.addEventListener("mousemove", (ev) => {
+              tooltip.style.left = ev.clientX + 14 + "px";
+              tooltip.style.top = ev.clientY - 10 + "px";
+            });
+            cell.addEventListener("mouseleave", () =>
+              tooltip.classList.remove("show"),
+            );
+            grid.appendChild(cell);
+          });
+        if (!chartDrawn) {
+          drawCurve();
+          chartDrawn = true;
+        }
+      }
+
+      // ── Due ───────────────────────────────────────────────────────────────
+      function renderDue() {
+        const list = document.getElementById("due-list");
+        const due = entries.filter(isDue);
+        if (!due.length) {
+          list.innerHTML =
+            '<div class="empty-state"><strong>All clear.</strong><p>Nothing due right now. Keep solving!</p></div>';
+          return;
+        }
+        list.innerHTML = due
+          .map(
+            (e) => `
+    <div class="due-card">
+      <div class="due-info">
+        <div class="due-name">${e.name}</div>
+        <div class="due-meta">${e.pattern || "—"} · ${revLabel(e.reviews)} due · ${e.source}</div>
+      </div>
+      <div class="mark-btns">
+        <button class="mark-btn mark-easy"   onclick="markReviewed('${e.firestoreId}','easy')">Easy</button>
+        <button class="mark-btn mark-medium" onclick="markReviewed('${e.firestoreId}','medium')">Medium</button>
+        <button class="mark-btn mark-hard"   onclick="markReviewed('${e.firestoreId}','hard')">Hard</button>
+      </div>
+    </div>`,
+          )
+          .join("");
+      }
+
+      window.markReviewed = async (fid, felt) => {
+        const e = entries.find((x) => x.firestoreId === fid);
+        if (!e || !currentUid) return;
+        const intervals = INTERVALS[felt];
+        const newReviews = Math.min(e.reviews + 1, intervals.length - 1);
+        const now = Date.now();
+        const nextReview = now + intervals[newReviews] * 86400000;
+        setSyncing(true);
+        try {
+          await updateDoc(doc(db, "users", currentUid, "problems", fid), {
+            reviews: newReviews,
+            diff: felt,
+            lastReviewAt: now,
+            nextReview,
+          });
+          showToast(
+            `Marked ${felt} — next review ${until(nextReview).toLowerCase()}`,
+          );
+        } catch (err) {
+          showToast("Error: " + err.message);
+          setSyncing(false);
+        }
+      };
+
+      // ── All problems ──────────────────────────────────────────────────────
+      function renderAll() {
+        const list = document.getElementById("all-list");
+        if (!entries.length) {
+          list.innerHTML =
+            '<div class="empty-state"><strong>No problems yet.</strong><p>Log your first problem above.</p></div>';
+          return;
+        }
+        list.innerHTML = entries
+          .map((e) => {
+            const r = calcRetention(e);
+            return `
+    <div class="prob-row">
+      <div class="prob-retention" style="background:${rColor(r)};color:${rTextColor(r)};border:1px solid ${rTextColor(r)}">
+        ${Math.round(r * 100)}%
+      </div>
+      <div class="prob-info">
+        <div class="prob-name">${e.name}</div>
+        <div class="prob-meta">${e.pattern || "No pattern"} · ${e.source} · Solved ${fmtDate(e.solvedAt)}</div>
+        <div class="prob-next">Next review: ${until(e.nextReview)}</div>
+      </div>
+      <span class="tag tag-${e.diff}">${e.diff}</span>
+      <span class="rev-label">${revLabel(e.reviews)}</span>
+      <button class="del-btn" onclick="deleteProblem('${e.firestoreId}')" title="Delete">&#x2715;</button>
+    </div>`;
+          })
+          .join("");
+      }
+
+      window.deleteProblem = async (fid) => {
+        if (!confirm("Remove this problem from your tracker?")) return;
+        if (!currentUid) return;
+        setSyncing(true);
+        try {
+          await deleteDoc(doc(db, "users", currentUid, "problems", fid));
+          showToast("Problem removed");
+        } catch (err) {
+          showToast("Error: " + err.message);
+          setSyncing(false);
+        }
+      };
+
+      // ── Forgetting curve chart ────────────────────────────────────────────
+      async function drawCurve() {
+        const { Chart, registerables } =
+          await import("https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js");
+        Chart.register(...registerables);
+        const canvas = document.getElementById("fc-canvas");
+        if (!canvas) return;
+        const days = Array.from({ length: 31 }, (_, i) => i);
+        function forget(t, n) {
+          const stabs = [1, 3, 7, 21];
+          let r = 1;
+          for (let i = 0; i < n; i++) {
+            const s = stabs[i] || 21;
+            if (t > s) r *= Math.exp((-0.693 * (t - s)) / s);
+          }
+          return Math.max(0, Math.min(1, r));
+        }
+        new Chart(canvas, {
+          type: "line",
+          data: {
+            labels: days,
+            datasets: [
+              {
+                label: "No revision",
+                data: days.map((d) => Math.round(Math.exp(-0.693 * d) * 100)),
+                borderColor: "#E85D5D",
+                borderWidth: 1.5,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.4,
+                borderDash: [5, 3],
+              },
+              {
+                label: "After R1 (day 1)",
+                data: days.map((d) => Math.round(forget(d, 1) * 100)),
+                borderColor: "#F5A623",
+                borderWidth: 1.5,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.4,
+              },
+              {
+                label: "After R4 (day 21)",
+                data: days.map((d) => Math.round(forget(d, 4) * 100)),
+                borderColor: "#2ECC8A",
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: "#8B8FA8",
+                  font: { size: 11 },
+                  boxWidth: 14,
+                  padding: 16,
+                },
+              },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+                callbacks: {
+                  label: (c) => " " + c.dataset.label + ": " + c.parsed.y + "%",
+                },
+              },
+            },
+            scales: {
+              x: {
+                ticks: {
+                  color: "#555870",
+                  font: { size: 10 },
+                  maxTicksLimit: 8,
+                  callback: (v, i) => (i % 5 === 0 ? "Day " + i : ""),
+                },
+                grid: { color: "rgba(255,255,255,0.05)" },
+                title: {
+                  display: true,
+                  text: "Days since solving",
+                  color: "#555870",
+                  font: { size: 11 },
+                },
+              },
+              y: {
+                ticks: {
+                  color: "#555870",
+                  font: { size: 10 },
+                  callback: (v) => v + "%",
+                },
+                grid: { color: "rgba(255,255,255,0.05)" },
+                min: 0,
+                max: 100,
+                title: {
+                  display: true,
+                  text: "Retention",
+                  color: "#555870",
+                  font: { size: 11 },
+                },
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
