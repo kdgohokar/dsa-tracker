@@ -10,5 +10,10 @@ node_modules/
 # OS
 .DS_Store
 
+# Local tooling / harness artifacts
+.agents/
+.claude/
+skills-lock.json
+
 # Service account keys — never commit
 *serviceAccount*.json
