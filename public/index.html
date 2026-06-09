@@ -1410,6 +1410,10 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
       import {
+        initializeAppCheck,
+        ReCaptchaV3Provider,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
+      import {
         getAuth,
         GoogleAuthProvider,
         signInWithPopup,
@@ -1451,6 +1455,34 @@
       };
 
       const app = initializeApp(firebaseConfig);
+
+      // ── App Check (reCAPTCHA v3) ──────────────────────────────────────────
+      // The site key is PUBLIC and safe to commit. Generate the key pair in:
+      //   Firebase Console → App Check → Apps → register this app w/ reCAPTCHA v3
+      //   (add domains dsa-tracker-c9277.web.app, .firebaseapp.com, localhost).
+      // The matching reCAPTCHA SECRET key is entered in that console, never here.
+      // App Check is initialized BEFORE other Firebase services so its tokens
+      // attach to Auth/Firestore requests.
+      const RECAPTCHA_V3_SITE_KEY = "REPLACE_WITH_YOUR_RECAPTCHA_V3_SITE_KEY";
+
+      // Local dev: prints a debug token to the console — register it under
+      // App Check → Debug tokens so localhost works without a real challenge.
+      if (
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1"
+      ) {
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      }
+
+      // Stays inert until a real site key is set, so deploys never break before
+      // App Check is fully configured/enforced in the console.
+      if (!RECAPTCHA_V3_SITE_KEY.startsWith("REPLACE_")) {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+          isTokenAutoRefreshEnabled: true,
+        });
+      }
+
       const auth = getAuth(app);
       // Offline persistence with multi-tab sync
       // (replaces the deprecated, single-tab enableIndexedDbPersistence)
