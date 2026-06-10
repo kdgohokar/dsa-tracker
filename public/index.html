@@ -576,18 +576,12 @@
         </div>
         <div class="form-grid">
           <div>
-            <div class="field-label">Review stage</div>
-            <select class="field-input" id="edit-stage">
-              <option value="0">R1</option>
-              <option value="1">R2</option>
-              <option value="2">R3</option>
-              <option value="3">R4</option>
-              <option value="4">Maint.</option>
-            </select>
+            <div class="field-label">Last reviewed at</div>
+            <input class="field-input" id="edit-lastreview" type="date" />
           </div>
           <div>
-            <div class="field-label">Next review</div>
-            <input class="field-input" id="edit-next" type="date" />
+            <div class="field-label">Schedule (auto)</div>
+            <div class="field-readonly" id="edit-schedule">—</div>
           </div>
         </div>
         <div class="modal-actions">

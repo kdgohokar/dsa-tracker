@@ -639,6 +639,20 @@ function setSelect(sel, val) {
   }
 }
 
+// Stage and next-review are system-calculated, so show them read-only and
+// keep the preview live as the user changes "last reviewed at".
+function updateSchedulePreview() {
+  const e = entries.find(
+    (x) => x.firestoreId === document.getElementById("edit-id").value,
+  );
+  if (!e) return;
+  const lastVal = document.getElementById("edit-lastreview").value;
+  const lastAt = lastVal ? fromDateInput(lastVal) : e.lastReviewAt;
+  const next = lastAt + STAGE_DAYS[Math.min(e.reviews ?? 0, MAINT)] * 86400000;
+  document.getElementById("edit-schedule").textContent =
+    `${revLabel(e.reviews)} · next review ${until(next).toLowerCase()}`;
+}
+
 window.openEdit = (fid) => {
   const e = entries.find((x) => x.firestoreId === fid);
   if (!e) return;
@@ -656,10 +670,10 @@ window.openEdit = (fid) => {
   ].includes(e.diff)
     ? e.diff
     : "medium";
-  document.getElementById("edit-stage").value = String(
-    Math.min(e.reviews ?? 0, MAINT),
-  );
-  document.getElementById("edit-next").value = toDateInput(e.nextReview);
+  const lastInput = document.getElementById("edit-lastreview");
+  lastInput.value = toDateInput(e.lastReviewAt);
+  lastInput.max = toDateInput(Date.now()); // can't have reviewed it in the future
+  updateSchedulePreview();
   document.getElementById("edit-overlay").classList.add("show");
 };
 
@@ -681,22 +695,14 @@ window.saveEdit = async () => {
     source: document.getElementById("edit-source").value,
     diff: document.getElementById("edit-diff").value,
   };
-  const newReviews = parseInt(
-    document.getElementById("edit-stage").value,
-    10,
-  );
-  const nextVal = document.getElementById("edit-next").value;
-  // Only rewrite scheduling fields when the stage or date actually
-  // changed, so fixing a name doesn't quietly shift the retention curve.
-  const dateChanged = nextVal && nextVal !== toDateInput(e.nextReview);
-  if (dateChanged || newReviews !== e.reviews) {
-    const nextReview = nextVal ? fromDateInput(nextVal) : e.nextReview;
-    update.reviews = newReviews;
-    update.nextReview = nextReview;
-    // Keep retention coherent: derive lastReviewAt so the cell decays to
-    // ~50% exactly when the next review comes due.
-    update.lastReviewAt =
-      nextReview - STAGE_DAYS[Math.min(newReviews, MAINT)] * 86400000;
+  const lastVal = document.getElementById("edit-lastreview").value;
+  // "Last reviewed at" is the only user-owned date; the stage and the next
+  // review stay system-calculated, so derive nextReview from this date.
+  if (lastVal && lastVal !== toDateInput(e.lastReviewAt)) {
+    const lastReviewAt = fromDateInput(lastVal);
+    update.lastReviewAt = lastReviewAt;
+    update.nextReview =
+      lastReviewAt + STAGE_DAYS[Math.min(e.reviews ?? 0, MAINT)] * 86400000;
   }
   setSyncing(true);
   try {
@@ -720,6 +726,9 @@ document.getElementById("edit-overlay").addEventListener("click", (ev) => {
 document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape") window.closeEdit();
 });
+document
+  .getElementById("edit-lastreview")
+  .addEventListener("input", updateSchedulePreview);
 
 // ── Forgetting curve chart ────────────────────────────────────────────
 async function drawCurve() {
