@@ -63,8 +63,8 @@ const firebaseConfig = {
 };
 ```
 
-4. Open `public/index.html` in your editor
-5. Find the block near the bottom that starts with `// STEP 1: Replace this config`
+4. Open `public/app.js` in your editor
+5. Find the block near the top that starts with `// STEP 1: Replace this config`
 6. Replace the placeholder values with your real config values
 
 ---
@@ -131,7 +131,9 @@ Now every `git push origin main` auto-deploys.
 ```
 dsa-tracker/
 ├── public/
-│   └── index.html          # The entire app (single file)
+│   ├── index.html          # Markup
+│   ├── styles.css          # All styles
+│   └── app.js              # App logic + Firebase config (no build step)
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml      # GitHub Actions auto-deploy
@@ -166,7 +168,7 @@ Each document:
 
 ## Customising SRS intervals
 
-Edit this block near the top of the `<script>` in `public/index.html`:
+Edit this block near the top of `public/app.js`:
 
 ```js
 const INTERVALS = {
