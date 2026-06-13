@@ -268,7 +268,36 @@ const fmtDate = (ts) =>
   });
 const revLabel = (n) =>
   ["R1", "R2", "R3", "R4", "Maint."][Math.min(n, 4)];
-const isDue = (e) => e.nextReview <= Date.now();
+// A problem becomes due on its scheduled calendar day — review it anytime
+// that day, not at the exact timestamp it was logged. The 12h floor since the
+// last review stops two reviews collapsing into one session, which would
+// defeat the spacing. (Every interval is >= 1 day, so this never blocks an
+// on-time review; it only blocks same-day cramming on the 1-day step.)
+const MIN_GAP_MS = 12 * 3600000;
+// How far ahead the Due tab previews upcoming problems (shown locked).
+const SOON_WINDOW_MS = 12 * 3600000;
+const startOfDay = (ts) => {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
+// The exact moment a problem unlocks for review: the later of its scheduled
+// calendar day and the 12h floor since the last review.
+const dueAt = (e) =>
+  Math.max(startOfDay(e.nextReview), e.lastReviewAt + MIN_GAP_MS);
+const isDue = (e) => Date.now() >= dueAt(e);
+// Human countdown until `ms` from now elapses: "HH:MM hours" while an hour or
+// more remains, otherwise "M minutes".
+const fmtCountdown = (ms) => {
+  const mins = Math.max(0, Math.floor(ms / 60000));
+  if (mins >= 60) {
+    const h = String(Math.floor(mins / 60)).padStart(2, "0");
+    const m = String(mins % 60).padStart(2, "0");
+    return `${h}:${m} hours`;
+  }
+  if (mins === 0) return "<1 minute";
+  return `${mins} minute${mins === 1 ? "" : "s"}`;
+};
 
 // ── UI helpers ────────────────────────────────────────────────────────
 // Show a toast. Pass an actionLabel + actionFn to add an inline button
@@ -334,7 +363,12 @@ window.switchTab = (id, btn) => {
   if (navBtn) navBtn.classList.add("active");
   document.getElementById("panel-" + id).classList.add("active");
   if (id === "heatmap") renderHeatmap();
-  if (id === "due") renderDue();
+  if (id === "due") {
+    renderDue();
+    startDueTimer();
+  } else {
+    stopDueTimer();
+  }
   if (id === "all") renderAll();
 };
 
@@ -469,18 +503,43 @@ function renderHeatmap() {
 }
 
 // ── Due ───────────────────────────────────────────────────────────────
+// One renderer for both states. When `locked`, the mark buttons are disabled
+// — the problem is previewed with a countdown but can't be logged until it
+// actually unlocks.
+function dueCard(e, pill, locked) {
+  const btn = (cls, felt, label) =>
+    locked
+      ? `<button class="mark-btn ${cls}" disabled>${label}</button>`
+      : `<button class="mark-btn ${cls}" onclick="markReviewed('${e.firestoreId}','${felt}')">${label}</button>`;
+  return `
+    <div class="due-card${locked ? " is-locked" : ""}">
+<div class="due-info">
+  <div class="due-name">${esc(e.name)}${pill}</div>
+  <div class="due-meta">${esc(e.pattern) || "—"} · ${revLabel(e.reviews)} · ${esc(e.source)}</div>
+</div>
+<div class="mark-btns">
+  ${btn("mark-easy", "easy", "Easy")}
+  ${btn("mark-medium", "medium", "Medium")}
+  ${btn("mark-hard", "hard", "Hard")}
+</div>
+    </div>`;
+}
+
 function renderDue() {
   const list = document.getElementById("due-list");
-  // Most overdue first (smallest nextReview is furthest in the past).
-  const due = entries
-    .filter(isDue)
-    .sort((a, b) => a.nextReview - b.nextReview);
-  if (!due.length) {
-    // Don't just say "all clear" — the map may show fading colours that
-    // are expected and scheduled. Point at the next one coming up.
+  const now = Date.now();
+  // Most overdue first (smallest dueAt is furthest in the past).
+  const due = entries.filter(isDue).sort((a, b) => dueAt(a) - dueAt(b));
+  // Upcoming within the preview window — shown locked, with a countdown.
+  const soon = entries
+    .filter((e) => !isDue(e) && dueAt(e) - now <= SOON_WINDOW_MS)
+    .sort((a, b) => dueAt(a) - dueAt(b));
+
+  if (!due.length && !soon.length) {
+    // Nothing now and nothing imminent — point at the next one coming up.
     const next = entries
       .filter((e) => !isDue(e))
-      .sort((a, b) => a.nextReview - b.nextReview)[0];
+      .sort((a, b) => dueAt(a) - dueAt(b))[0];
     list.innerHTML = `<div class="empty-state"><strong>All clear.</strong><p>${
       next
         ? `Next up: <strong>${esc(next.name)}</strong> — ${until(
@@ -490,28 +549,50 @@ function renderDue() {
     }</p></div>`;
     return;
   }
-  const now = Date.now();
-  list.innerHTML = due
+
+  let html = due
     .map((e) => {
-      const od = Math.floor((now - e.nextReview) / 86400000);
+      const od = Math.floor((now - dueAt(e)) / 86400000);
       const pill =
         od <= 0
           ? '<span class="due-pill due-today">Due today</span>'
           : `<span class="due-pill due-over">${od} day${od === 1 ? "" : "s"} overdue</span>`;
-      return `
-    <div class="due-card">
-<div class="due-info">
-  <div class="due-name">${esc(e.name)}${pill}</div>
-  <div class="due-meta">${esc(e.pattern) || "—"} · ${revLabel(e.reviews)} · ${esc(e.source)}</div>
-</div>
-<div class="mark-btns">
-  <button class="mark-btn mark-easy"   onclick="markReviewed('${e.firestoreId}','easy')">Easy</button>
-  <button class="mark-btn mark-medium" onclick="markReviewed('${e.firestoreId}','medium')">Medium</button>
-  <button class="mark-btn mark-hard"   onclick="markReviewed('${e.firestoreId}','hard')">Hard</button>
-</div>
-    </div>`;
+      return dueCard(e, pill, false);
     })
     .join("");
+
+  if (soon.length) {
+    html += due.length
+      ? '<div class="due-subhead">Coming up</div>'
+      : '<div class="due-note">Nothing due right now — coming up:</div>';
+    html += soon
+      .map((e) => {
+        const pill = `<span class="due-pill due-soon">Due in ${fmtCountdown(
+          dueAt(e) - now,
+        )}</span>`;
+        return dueCard(e, pill, true);
+      })
+      .join("");
+  }
+  list.innerHTML = html;
+}
+
+// While the Due tab is open, tick the countdowns and auto-unlock problems
+// the moment they become due.
+let dueTimer = null;
+function startDueTimer() {
+  stopDueTimer();
+  dueTimer = setInterval(() => {
+    if (document.querySelector(".panel.active")?.id === "panel-due")
+      renderDue();
+    else stopDueTimer();
+  }, 30000);
+}
+function stopDueTimer() {
+  if (dueTimer) {
+    clearInterval(dueTimer);
+    dueTimer = null;
+  }
 }
 
 window.markReviewed = async (fid, felt) => {

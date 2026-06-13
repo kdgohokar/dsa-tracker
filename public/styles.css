@@ -773,6 +773,37 @@ select.field-input option {
 .mark-hard:hover {
   background: var(--danger-dim);
 }
+.due-soon {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+.due-card.is-locked {
+  background: transparent;
+  border-style: dashed;
+}
+.due-card.is-locked:hover {
+  border-color: var(--border);
+}
+.mark-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mark-btn:disabled:hover {
+  background: transparent;
+}
+.due-subhead {
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--hint);
+  margin: 16px 0 8px;
+}
+.due-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 4px 0 10px;
+}
 
 /* ── Guide ── */
 .guide-grid {
