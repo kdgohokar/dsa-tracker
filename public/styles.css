@@ -461,6 +461,10 @@ body {
   width: 100% !important;
   height: 160px !important;
 }
+#uc-canvas {
+  width: 100% !important;
+  height: 200px !important;
+}
 
 /* ── Form ── */
 .form-card {
