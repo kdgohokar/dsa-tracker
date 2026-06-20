@@ -63,7 +63,7 @@ const firebaseConfig = {
 };
 ```
 
-4. Open `public/app.js` in your editor
+4. Open `public/firebase.js` in your editor
 5. Find the block near the top that starts with `// STEP 1: Replace this config`
 6. Replace the placeholder values with your real config values
 
@@ -130,10 +130,21 @@ Now every `git push origin main` auto-deploys.
 
 ```
 dsa-tracker/
-├── public/
+├── public/                 # Native ES modules — no build step
 │   ├── index.html          # Markup
 │   ├── styles.css          # All styles
-│   └── app.js              # App logic + Firebase config (no build step)
+│   ├── app.js              # Entry point: auth + Firestore subscription + tabs
+│   ├── firebase.js         # Firebase init/config + auth + analytics
+│   ├── state.js            # Shared mutable state object
+│   ├── model.js            # Pure logic: SRS, taxonomy, formatting (unit-tested)
+│   ├── dom.js              # esc + auto-escaping html`` template tag
+│   ├── ui.js               # Toast + sync indicator
+│   ├── charts.js           # Chart.js forgetting/retention curves
+│   ├── heatmap.js          # Retention map tab
+│   ├── due.js              # Due/review queue tab
+│   ├── lists.js            # All-problems + Patterns tabs
+│   ├── edit.js             # Edit-problem modal
+│   └── logform.js          # Log-problem form
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml      # GitHub Actions auto-deploy
@@ -178,7 +189,7 @@ resurfaces as the `note` so it isn't lost; the next Edit persists it into `note`
 
 ## Customising SRS intervals
 
-Edit this block near the top of `public/app.js`:
+Edit the `STAGE_DAYS` block near the top of `public/model.js`:
 
 ```js
 const INTERVALS = {
