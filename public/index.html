@@ -237,6 +237,16 @@
                 <option>Custom</option>
               </select>
             </div>
+            <div style="margin-bottom: 12px">
+              <div class="field-label">Note (optional)</div>
+              <textarea
+                class="field-input"
+                id="f-note"
+                rows="2"
+                placeholder="e.g. approach, gotchas, why it was tricky"
+                autocomplete="off"
+              ></textarea>
+            </div>
             <div class="field-label" style="margin-bottom: 6px">
               How did it feel?
             </div>
@@ -542,6 +552,7 @@
       <div class="tt-row" id="tt-pat"></div>
       <div class="tt-row" id="tt-ret"></div>
       <div class="tt-row" id="tt-nxt"></div>
+      <div class="tt-row tt-note" id="tt-note"></div>
     </div>
 
     <!-- Toast -->
@@ -578,6 +589,16 @@
             <div class="field-label">DP type</div>
             <select class="field-input" id="edit-subtype"></select>
           </div>
+        </div>
+        <div style="margin-bottom: 12px">
+          <div class="field-label">Note (optional)</div>
+          <textarea
+            class="field-input"
+            id="edit-note"
+            rows="2"
+            placeholder="e.g. approach, gotchas, why it was tricky"
+            autocomplete="off"
+          ></textarea>
         </div>
         <div class="form-grid">
           <div>

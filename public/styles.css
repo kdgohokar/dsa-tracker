@@ -517,6 +517,11 @@ select.field-input {
 select.field-input option {
   background: var(--card);
 }
+textarea.field-input {
+  resize: vertical;
+  min-height: 56px;
+  line-height: 1.45;
+}
 .diff-row {
   display: flex;
   gap: 8px;
@@ -1185,6 +1190,20 @@ input[type="date"].field-input {
   font-size: 0.68rem;
   color: var(--hint);
   margin-top: 5px;
+}
+/* Optional free-text note shown under a problem across the lists. */
+.item-note {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 3px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tt-note {
+  font-style: italic;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 ::-webkit-scrollbar {

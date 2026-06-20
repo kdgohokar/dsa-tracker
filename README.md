@@ -155,6 +155,7 @@ Each document:
   "name":         "Coin Change",
   "category":     "DP",
   "subCategory":  "1D",
+  "note":         "bottom-up, watch the amount=0 base case",
   "source":       "Striver DP",
   "diff":         "medium",
   "reviews":      2,
@@ -169,6 +170,9 @@ Each document:
 holds the DP dimension (`1D` / `2D` / `3D`) and is empty for every other pattern.
 Problems logged before this field existed carry a legacy free-text `pattern` string
 instead — they show as **Uncategorized** in the Patterns tab until re-tagged via Edit.
+`note` is an optional free-text field for anything else worth remembering (approach,
+gotchas). For problems re-tagged from the old free-text `pattern`, that original text
+resurfaces as the `note` so it isn't lost; the next Edit persists it into `note`.
 
 ---
 

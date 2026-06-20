@@ -182,6 +182,17 @@ function patternLabel(e) {
   return e.pattern || "";
 }
 
+// Optional free-text note shown alongside a problem. New problems store it in
+// `note`. Older problems only had the free-text `pattern`; once that's been
+// replaced by a structured `category` the old text would otherwise vanish, so
+// surface it here as the note (it stays in `pattern` until the next Edit, when
+// it's persisted into `note`).
+function noteOf(e) {
+  if (e.note) return e.note;
+  if (e.category && e.pattern) return e.pattern;
+  return "";
+}
+
 // ── State ─────────────────────────────────────────────────────────────
 let entries = [];
 let selectedDiff = null;
@@ -474,6 +485,7 @@ window.addProblem = async () => {
   const category = document.getElementById("f-pattern").value;
   const subCategory =
     category === "DP" ? document.getElementById("f-subtype").value : "";
+  const note = document.getElementById("f-note").value.trim();
   const source = document.getElementById("f-source").value;
   if (!name || !selectedDiff || !category || !currentUid) return;
   if (category === "DP" && !subCategory) return;
@@ -484,6 +496,7 @@ window.addProblem = async () => {
     name,
     category,
     subCategory,
+    note,
     source,
     diff,
     reviews: 0,
@@ -506,6 +519,7 @@ window.addProblem = async () => {
     // Reset form
     document.getElementById("f-name").value = "";
     document.getElementById("f-pattern").selectedIndex = 0;
+    document.getElementById("f-note").value = "";
     syncSubtypeVisibility();
     selectedDiff = null;
     ["easy", "medium", "hard"].forEach(
@@ -529,6 +543,10 @@ function fillTooltip(e, r) {
     `Retention: ${Math.round(r * 100)}% · ${revLabel(e.reviews)}`;
   document.getElementById("tt-nxt").textContent =
     `Next review: ${until(e.nextReview)}`;
+  const ttNote = document.getElementById("tt-note");
+  const note = noteOf(e);
+  ttNote.textContent = note;
+  ttNote.style.display = note ? "" : "none";
   tooltip.classList.add("show");
 }
 // Position the (fixed) tooltip near a point, clamped to the viewport
@@ -601,6 +619,7 @@ function dueCard(e, pill, locked) {
 <div class="due-info">
   <div class="due-name">${esc(e.name)}${pill}</div>
   <div class="due-meta">${esc(patternLabel(e)) || "—"} · ${revLabel(e.reviews)} · ${esc(e.source)}</div>
+  ${noteOf(e) ? `<div class="item-note">${esc(noteOf(e))}</div>` : ""}
 </div>
 <div class="mark-btns">
   ${btn("mark-easy", "easy", "Easy")}
@@ -744,6 +763,7 @@ function renderAll() {
   <div class="prob-name">${esc(e.name)}</div>
   <div class="prob-meta">${esc(patternLabel(e)) || "No pattern"} · ${esc(e.source)} · Solved ${fmtDate(e.solvedAt)}</div>
   <div class="prob-next">Next review: ${until(e.nextReview)}</div>
+  ${noteOf(e) ? `<div class="item-note">${esc(noteOf(e))}</div>` : ""}
 </div>
 <span class="tag tag-${e.diff}">${e.diff}</span>
 <span class="rev-label">${revLabel(e.reviews)}</span>
@@ -798,6 +818,7 @@ function renderPatterns() {
           <div class="pat-item-info">
             <div class="pat-item-name">${esc(e.name)}</div>
             <div class="pat-item-meta">${bits.join(" · ")}</div>
+            ${noteOf(e) ? `<div class="item-note">${esc(noteOf(e))}</div>` : ""}
           </div>
           <span class="tag tag-${e.diff}">${e.diff}</span>
           <button class="icon-btn" onclick="openEdit('${e.firestoreId}')" title="Edit / re-tag">&#x270E;</button>
@@ -905,7 +926,11 @@ window.openEdit = (fid) => {
     e.category === "DP" && DP_SUBTYPES.includes(e.subCategory)
       ? e.subCategory
       : "";
-  // Surface any legacy free-text so an untagged problem is easy to re-tag.
+  // Prefill the note. For a re-tagged problem this recovers the old free-text
+  // `pattern` (see noteOf) so it's no longer hidden and is saved into `note`.
+  document.getElementById("edit-note").value = noteOf(e);
+  // Surface any legacy free-text next to the pattern picker so an untagged
+  // problem is easy to re-tag.
   const legacy = document.getElementById("edit-legacy");
   if (!e.category && e.pattern) {
     legacy.textContent = `Previously: ${e.pattern}`;
@@ -955,6 +980,7 @@ window.saveEdit = async () => {
       category === "DP"
         ? document.getElementById("edit-subtype").value
         : "",
+    note: document.getElementById("edit-note").value.trim(),
     source: document.getElementById("edit-source").value,
     diff: document.getElementById("edit-diff").value,
   };
