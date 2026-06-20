@@ -1099,6 +1099,94 @@ input[type="date"].field-input {
   color: var(--accent);
 }
 
+/* ── Patterns tab ── */
+.pat-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.pat-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+.pat-summary::-webkit-details-marker {
+  display: none;
+}
+.pat-summary::before {
+  content: "\25B8";
+  color: var(--hint);
+  font-size: 0.8rem;
+  transition: transform 0.15s;
+}
+.pat-group[open] > .pat-summary::before {
+  transform: rotate(90deg);
+}
+.pat-summary:hover {
+  background: var(--accent-glow);
+}
+.pat-name {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.pat-count {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-dim);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.pat-items {
+  border-top: 1px solid var(--border);
+}
+.pat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.pat-item:last-child {
+  border-bottom: none;
+}
+.pat-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.pat-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.pat-item-name {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pat-item-meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.pat-legacy {
+  font-style: italic;
+  color: var(--hint);
+}
+.legacy-note {
+  font-size: 0.68rem;
+  color: var(--hint);
+  margin-top: 5px;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }

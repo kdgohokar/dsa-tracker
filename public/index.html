@@ -137,6 +137,13 @@
           </button>
           <button
             class="nav-btn"
+            data-tab="patterns"
+            onclick="switchTab('patterns', this)"
+          >
+            Patterns
+          </button>
+          <button
+            class="nav-btn"
             data-tab="guide"
             onclick="switchTab('guide', this)"
           >
@@ -204,15 +211,17 @@
                 />
               </div>
               <div>
-                <div class="field-label">Pattern / topic</div>
-                <input
-                  class="field-input"
-                  id="f-pattern"
-                  type="text"
-                  placeholder="e.g. 1D DP, knapsack"
-                  autocomplete="off"
-                />
+                <div class="field-label">Pattern</div>
+                <select class="field-input" id="f-pattern"></select>
               </div>
+            </div>
+            <div id="f-subtype-wrap" style="display: none; margin-bottom: 12px">
+              <div class="field-label">DP type</div>
+              <select
+                class="field-input"
+                id="f-subtype"
+                style="max-width: 220px"
+              ></select>
             </div>
             <div style="margin-bottom: 12px">
               <div class="field-label">Source</div>
@@ -281,6 +290,14 @@
             All logged problems
           </div>
           <div class="prob-list" id="all-list"></div>
+        </div>
+
+        <!-- Patterns -->
+        <div id="panel-patterns" class="panel">
+          <div class="section-label" style="margin-bottom: 0.75rem">
+            Problems grouped by DSA pattern
+          </div>
+          <div id="patterns-list"></div>
         </div>
 
         <!-- Guide -->
@@ -551,13 +568,15 @@
             />
           </div>
           <div>
-            <div class="field-label">Pattern / topic</div>
-            <input
-              class="field-input"
-              id="edit-pattern"
-              type="text"
-              autocomplete="off"
-            />
+            <div class="field-label">Pattern</div>
+            <select class="field-input" id="edit-pattern"></select>
+            <div class="legacy-note" id="edit-legacy" style="display: none"></div>
+          </div>
+        </div>
+        <div class="form-grid" id="edit-subtype-wrap" style="display: none">
+          <div>
+            <div class="field-label">DP type</div>
+            <select class="field-input" id="edit-subtype"></select>
           </div>
         </div>
         <div class="form-grid">

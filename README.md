@@ -153,7 +153,8 @@ Each document:
 ```json
 {
   "name":         "Coin Change",
-  "pattern":      "1D DP, knapsack",
+  "category":     "DP",
+  "subCategory":  "1D",
   "source":       "Striver DP",
   "diff":         "medium",
   "reviews":      2,
@@ -163,6 +164,11 @@ Each document:
   "createdAt":    "<server timestamp>"
 }
 ```
+
+`category` is one of the fixed DSA patterns (DP, Greedy, 2 Pointers, …); `subCategory`
+holds the DP dimension (`1D` / `2D` / `3D`) and is empty for every other pattern.
+Problems logged before this field existed carry a legacy free-text `pattern` string
+instead — they show as **Uncategorized** in the Patterns tab until re-tagged via Edit.
 
 ---
 
