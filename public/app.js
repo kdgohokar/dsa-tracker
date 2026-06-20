@@ -146,6 +146,42 @@ const esc = (s) =>
       })[c],
   );
 
+// ── Pattern taxonomy ──────────────────────────────────────────────────
+// Fixed list of DSA patterns offered in the Log/Edit selectors and used to
+// group the Patterns tab. DP is the only pattern with sub-types (1D/2D/3D).
+const PATTERNS = [
+  "Arrays/HashMap",
+  "2 Pointers",
+  "Sliding Window",
+  "Stack",
+  "Binary Search",
+  "Linked List",
+  "Tree",
+  "Trie",
+  "Heap / Priority Queue",
+  "Backtracking",
+  "Graph",
+  "DP",
+  "Greedy",
+  "Intervals",
+  "Math",
+  "Bit Manipulation",
+];
+const DP_SUBTYPES = ["1D", "2D", "3D"];
+const UNCATEGORIZED = "Uncategorized";
+
+// Display label for a problem's pattern. The structured category wins; DP
+// shows its sub-type (e.g. "DP · 2D"). Falls back to the legacy free-text
+// `pattern` value (pre-feature problems), then to "".
+function patternLabel(e) {
+  if (e.category) {
+    return e.category === "DP" && e.subCategory
+      ? `${e.category} · ${e.subCategory}`
+      : e.category;
+  }
+  return e.pattern || "";
+}
+
 // ── State ─────────────────────────────────────────────────────────────
 let entries = [];
 let selectedDiff = null;
@@ -334,6 +370,7 @@ function refreshAll() {
   if (active?.id === "panel-heatmap") renderHeatmap();
   if (active?.id === "panel-due") renderDue();
   if (active?.id === "panel-all") renderAll();
+  if (active?.id === "panel-patterns") renderPatterns();
 }
 
 function updateStats() {
@@ -370,36 +407,83 @@ window.switchTab = (id, btn) => {
     stopDueTimer();
   }
   if (id === "all") renderAll();
+  if (id === "patterns") renderPatterns();
 };
 
 // ── Form ──────────────────────────────────────────────────────────────
+// Populate a <select> from a list of values, with an optional leading
+// placeholder. A disabled placeholder forces a real choice (required field).
+function fillSelect(id, values, placeholder, placeholderDisabled) {
+  const sel = document.getElementById(id);
+  const ph = placeholder
+    ? `<option value=""${
+        placeholderDisabled ? " disabled" : ""
+      } selected>${esc(placeholder)}</option>`
+    : "";
+  sel.innerHTML =
+    ph +
+    values.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
+}
+// Log form requires a pattern (disabled placeholder); the edit form lets a
+// problem stay Uncategorized (selectable blank) so legacy ones aren't forced.
+fillSelect("f-pattern", PATTERNS, "Select pattern…", true);
+fillSelect("f-subtype", DP_SUBTYPES, "Select…", true);
+fillSelect("edit-pattern", PATTERNS, UNCATEGORIZED, false);
+fillSelect("edit-subtype", DP_SUBTYPES, "Select…", true);
+
+// Submit is enabled only with a name, a difficulty, a pattern, and — when
+// the pattern is DP — a sub-type.
+function updateLogValidity() {
+  const name = document.getElementById("f-name").value.trim();
+  const pattern = document.getElementById("f-pattern").value;
+  const sub = document.getElementById("f-subtype").value;
+  const ok =
+    !!name && !!selectedDiff && !!pattern && (pattern !== "DP" || !!sub);
+  document.getElementById("submit-btn").disabled = !ok;
+}
+
+// Show the DP sub-type field only when DP is the chosen pattern.
+function syncSubtypeVisibility() {
+  const isDP = document.getElementById("f-pattern").value === "DP";
+  document.getElementById("f-subtype-wrap").style.display = isDP ? "" : "none";
+  if (!isDP) document.getElementById("f-subtype").selectedIndex = 0;
+}
+
 window.selectDiff = (d) => {
   selectedDiff = d;
   ["easy", "medium", "hard"].forEach((x) => {
     document.getElementById("db-" + x).className =
       "diff-btn" + (d === x ? " sel-" + x : "");
   });
-  document.getElementById("submit-btn").disabled = !document
-    .getElementById("f-name")
-    .value.trim();
+  updateLogValidity();
 };
 
-document.getElementById("f-name").addEventListener("input", (e) => {
-  document.getElementById("submit-btn").disabled =
-    !e.target.value.trim() || !selectedDiff;
+document
+  .getElementById("f-name")
+  .addEventListener("input", updateLogValidity);
+document.getElementById("f-pattern").addEventListener("change", () => {
+  syncSubtypeVisibility();
+  updateLogValidity();
 });
+document
+  .getElementById("f-subtype")
+  .addEventListener("change", updateLogValidity);
 
 window.addProblem = async () => {
   const name = document.getElementById("f-name").value.trim();
-  const pattern = document.getElementById("f-pattern").value.trim();
+  const category = document.getElementById("f-pattern").value;
+  const subCategory =
+    category === "DP" ? document.getElementById("f-subtype").value : "";
   const source = document.getElementById("f-source").value;
-  if (!name || !selectedDiff || !currentUid) return;
+  if (!name || !selectedDiff || !category || !currentUid) return;
+  if (category === "DP" && !subCategory) return;
 
   const diff = selectedDiff;
   const now = Date.now();
   const doc_data = {
     name,
-    pattern,
+    category,
+    subCategory,
     source,
     diff,
     reviews: 0,
@@ -418,10 +502,11 @@ window.addProblem = async () => {
     showToast(
       `"${name}" logged — R1 due ${until(doc_data.nextReview).toLowerCase()}`,
     );
-    track("log_problem", { difficulty: diff, source });
+    track("log_problem", { difficulty: diff, source, pattern: category });
     // Reset form
     document.getElementById("f-name").value = "";
-    document.getElementById("f-pattern").value = "";
+    document.getElementById("f-pattern").selectedIndex = 0;
+    syncSubtypeVisibility();
     selectedDiff = null;
     ["easy", "medium", "hard"].forEach(
       (x) => (document.getElementById("db-" + x).className = "diff-btn"),
@@ -439,7 +524,7 @@ const tooltip = document.getElementById("tooltip");
 function fillTooltip(e, r) {
   document.getElementById("tt-name").textContent = e.name;
   document.getElementById("tt-pat").textContent =
-    e.pattern || "No pattern tagged";
+    patternLabel(e) || "No pattern tagged";
   document.getElementById("tt-ret").textContent =
     `Retention: ${Math.round(r * 100)}% · ${revLabel(e.reviews)}`;
   document.getElementById("tt-nxt").textContent =
@@ -515,7 +600,7 @@ function dueCard(e, pill, locked) {
     <div class="due-card${locked ? " is-locked" : ""}">
 <div class="due-info">
   <div class="due-name">${esc(e.name)}${pill}</div>
-  <div class="due-meta">${esc(e.pattern) || "—"} · ${revLabel(e.reviews)} · ${esc(e.source)}</div>
+  <div class="due-meta">${esc(patternLabel(e)) || "—"} · ${revLabel(e.reviews)} · ${esc(e.source)}</div>
 </div>
 <div class="mark-btns">
   ${btn("mark-easy", "easy", "Easy")}
@@ -657,7 +742,7 @@ function renderAll() {
 </div>
 <div class="prob-info">
   <div class="prob-name">${esc(e.name)}</div>
-  <div class="prob-meta">${esc(e.pattern) || "No pattern"} · ${esc(e.source)} · Solved ${fmtDate(e.solvedAt)}</div>
+  <div class="prob-meta">${esc(patternLabel(e)) || "No pattern"} · ${esc(e.source)} · Solved ${fmtDate(e.solvedAt)}</div>
   <div class="prob-next">Next review: ${until(e.nextReview)}</div>
 </div>
 <span class="tag tag-${e.diff}">${e.diff}</span>
@@ -665,6 +750,68 @@ function renderAll() {
 <button class="icon-btn" onclick="openEdit('${e.firestoreId}')" title="Edit">&#x270E;</button>
 <button class="del-btn" onclick="deleteProblem('${e.firestoreId}')" title="Delete">&#x2715;</button>
     </div>`;
+    })
+    .join("");
+}
+
+// ── Patterns ──────────────────────────────────────────────────────────
+// Group problems by their structured category and render one collapsible
+// section per pattern. Problems without a category (legacy/untagged) fall
+// under "Uncategorized"; their old free-text pattern is shown so they're
+// easy to re-tag via Edit.
+function renderPatterns() {
+  const container = document.getElementById("patterns-list");
+  if (!entries.length) {
+    container.innerHTML =
+      '<div class="empty-state"><strong>No problems yet.</strong><p>Log a problem to see it categorized here.</p></div>';
+    return;
+  }
+
+  const groups = new Map();
+  for (const e of entries) {
+    const key = e.category || UNCATEGORIZED;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(e);
+  }
+
+  // Order groups by the canonical PATTERNS order, with Uncategorized last.
+  const order = [...PATTERNS, UNCATEGORIZED];
+  const rank = (k) => {
+    const i = order.indexOf(k);
+    return i === -1 ? order.length : i;
+  };
+  const keys = [...groups.keys()].sort((a, b) => rank(a) - rank(b));
+
+  container.innerHTML = keys
+    .map((key) => {
+      const items = groups
+        .get(key)
+        .map((e) => {
+          const bits = [];
+          if (e.category === "DP" && e.subCategory)
+            bits.push(esc(e.subCategory));
+          else if (!e.category && e.pattern)
+            bits.push(`<span class="pat-legacy">${esc(e.pattern)}</span>`);
+          bits.push(esc(e.source));
+          return `
+        <div class="pat-item">
+          <div class="pat-item-info">
+            <div class="pat-item-name">${esc(e.name)}</div>
+            <div class="pat-item-meta">${bits.join(" · ")}</div>
+          </div>
+          <span class="tag tag-${e.diff}">${e.diff}</span>
+          <button class="icon-btn" onclick="openEdit('${e.firestoreId}')" title="Edit / re-tag">&#x270E;</button>
+        </div>`;
+        })
+        .join("");
+      return `
+      <details class="pat-group" open>
+        <summary class="pat-summary">
+          <span class="pat-name">${esc(key)}</span>
+          <span class="pat-count">${groups.get(key).length}</span>
+        </summary>
+        <div class="pat-items">${items}</div>
+      </details>`;
     })
     .join("");
 }
@@ -735,12 +882,37 @@ function updateSchedulePreview() {
     `${revLabel(e.reviews)} · next review ${until(next).toLowerCase()}`;
 }
 
+// Reflect the selected pattern in the edit modal: DP reveals the sub-type
+// row, every other pattern hides it.
+function syncEditSubtypeVisibility() {
+  const isDP = document.getElementById("edit-pattern").value === "DP";
+  document.getElementById("edit-subtype-wrap").style.display = isDP
+    ? ""
+    : "none";
+  if (!isDP) document.getElementById("edit-subtype").selectedIndex = 0;
+}
+
 window.openEdit = (fid) => {
   const e = entries.find((x) => x.firestoreId === fid);
   if (!e) return;
   document.getElementById("edit-id").value = fid;
   document.getElementById("edit-name").value = e.name || "";
-  document.getElementById("edit-pattern").value = e.pattern || "";
+  document.getElementById("edit-pattern").value = PATTERNS.includes(e.category)
+    ? e.category
+    : "";
+  syncEditSubtypeVisibility();
+  document.getElementById("edit-subtype").value =
+    e.category === "DP" && DP_SUBTYPES.includes(e.subCategory)
+      ? e.subCategory
+      : "";
+  // Surface any legacy free-text so an untagged problem is easy to re-tag.
+  const legacy = document.getElementById("edit-legacy");
+  if (!e.category && e.pattern) {
+    legacy.textContent = `Previously: ${e.pattern}`;
+    legacy.style.display = "";
+  } else {
+    legacy.style.display = "none";
+  }
   setSelect(
     document.getElementById("edit-source"),
     e.source || "Leetcode",
@@ -771,9 +943,18 @@ window.saveEdit = async () => {
     showToast("Name can't be empty");
     return;
   }
+  const category = document.getElementById("edit-pattern").value;
+  if (category === "DP" && !document.getElementById("edit-subtype").value) {
+    showToast("Pick a DP type");
+    return;
+  }
   const update = {
     name,
-    pattern: document.getElementById("edit-pattern").value.trim(),
+    category,
+    subCategory:
+      category === "DP"
+        ? document.getElementById("edit-subtype").value
+        : "",
     source: document.getElementById("edit-source").value,
     diff: document.getElementById("edit-diff").value,
   };
@@ -811,6 +992,9 @@ document.addEventListener("keydown", (ev) => {
 document
   .getElementById("edit-lastreview")
   .addEventListener("input", updateSchedulePreview);
+document
+  .getElementById("edit-pattern")
+  .addEventListener("change", syncEditSubtypeVisibility);
 
 // ── Charts ────────────────────────────────────────────────────────────
 // Load Chart.js once and reuse. Must be the ESM build (/+esm): the UMD
