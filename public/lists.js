@@ -26,6 +26,13 @@ import { showToast, setSyncing } from "./ui.js";
 
 export function renderAll() {
   const list = document.getElementById("all-list");
+
+  const countEl = document.getElementById("listCount");
+  if (countEl) {
+    const n = state.entries.length;
+    countEl.textContent = n ? ` (${n})` : "";
+  }
+
   if (!state.entries.length) {
     list.innerHTML =
       '<div class="empty-state"><strong>No problems yet.</strong><p>Log your first problem above.</p></div>';
@@ -35,42 +42,41 @@ export function renderAll() {
     list,
     html`${state.entries.map((e) => {
       const r = calcRetention(e);
-      return html`
-        <div class="prob-row">
-          <div
-            class="prob-retention"
-            style="background:${rColor(r)};color:${rTextColor(
-              r,
-            )};border:1px solid ${rTextColor(r)}"
-          >
-            ${Math.round(r * 100)}%
+      return html` <div class="prob-row">
+        <div
+          class="prob-retention"
+          style="background:${rColor(r)};color:${rTextColor(
+            r,
+          )};border:1px solid ${rTextColor(r)}"
+        >
+          ${Math.round(r * 100)}%
+        </div>
+        <div class="prob-info">
+          <div class="prob-name">${e.name}</div>
+          <div class="prob-meta">
+            ${patternLabel(e) || "No pattern"} · ${e.source} · Solved
+            ${fmtDate(e.solvedAt)}
           </div>
-          <div class="prob-info">
-            <div class="prob-name">${e.name}</div>
-            <div class="prob-meta">
-              ${patternLabel(e) || "No pattern"} · ${e.source} · Solved
-              ${fmtDate(e.solvedAt)}
-            </div>
-            <div class="prob-next">Next review: ${until(e.nextReview)}</div>
-            ${noteOf(e) ? html`<div class="item-note">${noteOf(e)}</div>` : ""}
-          </div>
-          <span class="tag tag-${e.diff}">${e.diff}</span>
-          <span class="rev-label">${revLabel(e.reviews)}</span>
-          <button
-            class="icon-btn"
-            onclick="openEdit('${e.firestoreId}')"
-            title="Edit"
-          >
-            &#x270E;
-          </button>
-          <button
-            class="del-btn"
-            onclick="deleteProblem('${e.firestoreId}')"
-            title="Delete"
-          >
-            &#x2715;
-          </button>
-        </div>`;
+          <div class="prob-next">Next review: ${until(e.nextReview)}</div>
+          ${noteOf(e) ? html`<div class="item-note">${noteOf(e)}</div>` : ""}
+        </div>
+        <span class="tag tag-${e.diff}">${e.diff}</span>
+        <span class="rev-label">${revLabel(e.reviews)}</span>
+        <button
+          class="icon-btn"
+          onclick="openEdit('${e.firestoreId}')"
+          title="Edit"
+        >
+          &#x270E;
+        </button>
+        <button
+          class="del-btn"
+          onclick="deleteProblem('${e.firestoreId}')"
+          title="Delete"
+        >
+          &#x2715;
+        </button>
+      </div>`;
     })}`,
   );
 }
@@ -115,33 +121,29 @@ export function renderPatterns() {
           bits.push(html`<span class="pat-legacy">${e.pattern}</span>`);
         bits.push(e.source);
         const meta = bits.map((b, i) => html`${i ? raw(" · ") : ""}${b}`);
-        return html`
-          <div class="pat-item">
-            <div class="pat-item-info">
-              <div class="pat-item-name">${e.name}</div>
-              <div class="pat-item-meta">${meta}</div>
-              ${noteOf(e)
-                ? html`<div class="item-note">${noteOf(e)}</div>`
-                : ""}
-            </div>
-            <span class="tag tag-${e.diff}">${e.diff}</span>
-            <button
-              class="icon-btn"
-              onclick="openEdit('${e.firestoreId}')"
-              title="Edit / re-tag"
-            >
-              &#x270E;
-            </button>
-          </div>`;
+        return html` <div class="pat-item">
+          <div class="pat-item-info">
+            <div class="pat-item-name">${e.name}</div>
+            <div class="pat-item-meta">${meta}</div>
+            ${noteOf(e) ? html`<div class="item-note">${noteOf(e)}</div>` : ""}
+          </div>
+          <span class="tag tag-${e.diff}">${e.diff}</span>
+          <button
+            class="icon-btn"
+            onclick="openEdit('${e.firestoreId}')"
+            title="Edit / re-tag"
+          >
+            &#x270E;
+          </button>
+        </div>`;
       });
-      return html`
-        <details class="pat-group" open>
-          <summary class="pat-summary">
-            <span class="pat-name">${key}</span>
-            <span class="pat-count">${groups.get(key).length}</span>
-          </summary>
-          <div class="pat-items">${items}</div>
-        </details>`;
+      return html` <details class="pat-group" open>
+        <summary class="pat-summary">
+          <span class="pat-name">${key}</span>
+          <span class="pat-count">${groups.get(key).length}</span>
+        </summary>
+        <div class="pat-items">${items}</div>
+      </details>`;
     })}`,
   );
 }

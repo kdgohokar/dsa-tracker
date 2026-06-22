@@ -189,9 +189,7 @@
             <canvas id="fc-canvas"></canvas>
           </div>
           <div class="chart-wrap">
-            <div class="chart-title">
-              Your problems — retention forecast
-            </div>
+            <div class="chart-title">Your problems — retention forecast</div>
             <canvas id="uc-canvas"></canvas>
           </div>
         </div>
@@ -297,7 +295,7 @@
         <!-- All -->
         <div id="panel-all" class="panel">
           <div class="section-label" style="margin-bottom: 0.75rem">
-            All logged problems
+            All logged problems<span id="listCount"></span>
           </div>
           <div class="prob-list" id="all-list"></div>
         </div>
@@ -581,7 +579,11 @@
           <div>
             <div class="field-label">Pattern</div>
             <select class="field-input" id="edit-pattern"></select>
-            <div class="legacy-note" id="edit-legacy" style="display: none"></div>
+            <div
+              class="legacy-note"
+              id="edit-legacy"
+              style="display: none"
+            ></div>
           </div>
         </div>
         <div class="form-grid" id="edit-subtype-wrap" style="display: none">
